@@ -1,7 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
-using WarcraftLogsClient;
 
-namespace WarcraftLogsAnalyzer;
+using WarcraftLogs;
 
 public static class WarcraftLogsAnalyzerExtensions
 {

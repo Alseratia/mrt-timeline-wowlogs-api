@@ -1,8 +1,8 @@
-using Timeline;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using WarcraftLogsAnalyzer.Models;
-using WarcraftLogsAnalyzer;
+
+using WarcraftLogs;
+using TimelineDatabaseContext;
 
 /// <summary>
 /// The service is designed to update the database based on submitted logs.
@@ -10,15 +10,15 @@ using WarcraftLogsAnalyzer;
 public class UpdateDBService
 {
   private readonly WarcraftlogsAnalyzer _logAnalyzer;
-  private readonly TimelineDbContext _db;
-  private readonly ToDBDataTransformer _toDBDataTransformer;
+  private readonly DatabaseContext _db;
+  private readonly ToDboTransformer _ToDboTransformer;
   public UpdateDBService(WarcraftlogsAnalyzer logAnalyzer,
-                        TimelineDbContext db,
-                        ToDBDataTransformer toDBDataTransformer)
+                        DatabaseContext db,
+                        ToDboTransformer ToDboTransformer)
   {
     _logAnalyzer = logAnalyzer;
     _db = db;
-    _toDBDataTransformer = toDBDataTransformer;
+    _ToDboTransformer = ToDboTransformer;
   }
   public async Task<ActionResult> UploadRaidBosses(string raidName)
   {
@@ -29,7 +29,7 @@ public class UpdateDBService
     var needZone = zones.FirstOrDefault(z => z.Name == raidName);
     if (needZone == null) return new NotFoundResult();
 
-    var dbZone = _db.Zone.Where(x => x.name == raidName).FirstOrDefault();
+    var dbZone = _db.Zone.Where(x => x.Name == raidName).FirstOrDefault();
     if (dbZone == null)
     {
       dbZone = needZone.ToZone();
@@ -38,17 +38,17 @@ public class UpdateDBService
 
     foreach (var encounter in needZone.Encounters)
     {
-      if (_db.Boss.Where(x => x.inGameId == encounter.Id).FirstOrDefault() == null)
+      if (_db.Boss.Where(x => x.InGameId == encounter.Id).FirstOrDefault() == null)
       {
-        var mythicBoss = _toDBDataTransformer.ToBoss(encounter, needZone);
-        mythicBoss.difficulty = Difficulty.MYTHIC;
+        var mythicBoss = _ToDboTransformer.ToBoss(encounter, needZone);
+        mythicBoss.Difficulty = Difficulty.MYTHIC;
         _db.Boss.Add(mythicBoss);
-        _db.BossStage.Add(_toDBDataTransformer.CreateFirstStage(mythicBoss));
+        _db.BossStage.Add(_ToDboTransformer.CreateFirstStage(mythicBoss));
 
-        var heroicBoss = _toDBDataTransformer.ToBoss(encounter, needZone);
-        heroicBoss.difficulty = Difficulty.HEROIC;
+        var heroicBoss = _ToDboTransformer.ToBoss(encounter, needZone);
+        heroicBoss.Difficulty = Difficulty.HEROIC;
         _db.Boss.Add(heroicBoss);
-        _db.BossStage.Add(_toDBDataTransformer.CreateFirstStage(heroicBoss));
+        _db.BossStage.Add(_ToDboTransformer.CreateFirstStage(heroicBoss));
       }
     }
     _db.SaveChanges();
@@ -69,7 +69,7 @@ public class UpdateDBService
     var boss = await GetOrCreateBossAsync(fight);
     if (boss == null) return new NotFoundResult();
 
-    boss.fightDuration = fight.GetFightDuration();
+    boss.FightDuration = fight.GetFightDuration();
     await UpdateBossAbilities(boss, fightEvents);
     UpdateBossStages(boss, fightEvents);
     UpdateBossEvents(boss, fightEvents);
@@ -81,7 +81,7 @@ public class UpdateDBService
   public async Task<Boss?> GetOrCreateBossAsync(WLFight fight)
   {
     var bossId = fight.EncounterID;
-    var boss = _db.Boss.Where(x => x.inGameId == bossId && x.difficulty == fight.Difficulty.ToDifficulty())
+    var boss = _db.Boss.Where(x => x.InGameId == bossId && x.Difficulty == fight.Difficulty.ToDifficulty())
                        .FirstOrDefault();
 
     if (boss == null)
@@ -90,12 +90,12 @@ public class UpdateDBService
       if (zone == null) return null;
 
       var newZone = zone.ToZone();
-      if (_db.Zone.Find(newZone.id) == null) _db.Zone.Add(newZone);
+      if (_db.Zone.Find(newZone.Id) == null) _db.Zone.Add(newZone);
 
-      boss = _toDBDataTransformer.ToBoss(fight, zone);
+      boss = _ToDboTransformer.ToBoss(fight, zone);
       _db.Boss.Add(boss);
 
-      _db.BossStage.Add(_toDBDataTransformer.CreateFirstStage(boss));
+      _db.BossStage.Add(_ToDboTransformer.CreateFirstStage(boss));
     }
     _db.SaveChanges();
     return boss;
@@ -103,42 +103,42 @@ public class UpdateDBService
 
   public async Task UpdateBossAbilities(Boss boss, List<WLEvent> events)
   {
-    var newAbilities = await _toDBDataTransformer.ToNewAbilities(boss, events);
+    var newAbilities = await _ToDboTransformer.ToNewAbilities(boss, events);
     _db.BossAbility.AddRange(newAbilities);
     _db.SaveChanges();
   }
 
   public void UpdateBossStages(Boss boss, List<WLEvent> events)
   {
-    var stages = _db.BossStage.Where(x => x.bossId == boss.id)
-                              .OrderByDescending(x => x.stageNumber)
+    var stages = _db.BossStage.Where(x => x.BossId == boss.Id)
+                              .OrderByDescending(x => x.StageNumber)
                               .ToList();
     if (stages.Count == 0) return;
 
-    int prev_startTimer = boss.fightDuration;
+    int prev_startTimer = boss.FightDuration;
     foreach (var stage in stages)
     {
-      stage.endTimer = prev_startTimer;
+      stage.EndTimer = prev_startTimer;
       if (stage.IsFirstStage()) continue;
 
       var activationEvent = events
-        .Where(a => a.Type.ToEventType() == stage.eventType && a.AbilityGameId == stage.abilityId)
-        .ElementAtOrDefault((Index)(stage.eventCount! - 1));
+        .Where(a => a.Type.ToEventType() == stage.EventType && a.AbilityGameId == stage.AbilityId)
+        .ElementAtOrDefault((Index)(stage.EventCount! - 1));
 
       if (activationEvent == null)
       {
         throw new Exception("Activation event not found"); // TODO
       }
       prev_startTimer = Convert.ToInt32(activationEvent.Timestamp / 1000.0);
-      stage.startTimer = prev_startTimer;
+      stage.StartTimer = prev_startTimer;
     }
     _db.SaveChanges();
   }
 
   public void UpdateBossEvents(Boss boss, List<WLEvent> events)
   {
-    var bossEvents = _toDBDataTransformer.ToBossEvents(boss, events);
-    _db.BossEvent.Where(e => e.bossId == boss.id).ExecuteDelete();
+    var bossEvents = _ToDboTransformer.ToBossEvents(boss, events);
+    _db.BossEvent.Where(e => e.BossId == boss.Id).ExecuteDelete();
     _db.BossEvent.AddRange(bossEvents);
     _db.SaveChanges();
   }

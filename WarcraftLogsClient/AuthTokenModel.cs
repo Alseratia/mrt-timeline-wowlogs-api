@@ -1,12 +1,13 @@
 using Newtonsoft.Json;
 
-namespace WarcraftLogsClient;
+namespace WarcraftLogs;
+
 public record OAuthAccessToken
 {
   [JsonProperty("access_token")]
-  public string _accessToken { get; init; } = "";
+  public string AccessToken { get; init; } = null!;
   [JsonProperty("expires_in")]
-  public long _expiresIn { get; init; }
+  public long ExpiresIn { get; init; }
 
-  public override string ToString() => _accessToken ?? "";
+  public override string ToString() => AccessToken ?? "";
 }

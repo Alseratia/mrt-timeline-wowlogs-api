@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 
+namespace Timeline;
+
 /// <summary>
 /// Controller for the client part of the application. Returns TimelineStoreState from this log
 /// </summary>

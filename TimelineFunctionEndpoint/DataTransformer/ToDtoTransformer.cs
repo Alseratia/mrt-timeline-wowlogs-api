@@ -1,13 +1,12 @@
-using WarcraftLogsAnalyzer.Models;
-using Timeline;
+using TimelineDatabaseContext;
+using WarcraftLogs;
 
-/// <summary>
-/// Classes for transforming data that come with warcraftlogs and database into TimelineStoreState models.
-/// </summary>
-public class ToTimelineDataTransformer
+namespace Timeline;
+
+public class ToDtoTransformer
 {
   private readonly CacheService _cacheService;
-  public ToTimelineDataTransformer(CacheService cacheService)
+  public ToDtoTransformer(CacheService cacheService)
   {
     _cacheService = cacheService;
   }
@@ -15,32 +14,33 @@ public class ToTimelineDataTransformer
   {
     return new Player()
     {
-      id = wlPlayer.Id,
-      name = wlPlayer.Name,
-      events = new List<TimelineEvent>(),
-      specId = dbSpec.id,
-      color = dbSpec.color
+      Id = wlPlayer.Id,
+      Name = wlPlayer.Name,
+      Events = new List<TimelineEvent>(),
+      SpecId = dbSpec.Id,
+      Color = dbSpec.Color
     };
   }
 
   public TimelineEvent ToTimelineEvent(WLEvent event_, BossStage? stage)
   {
-    var absoluteTimer = (int)(event_.Timestamp / 1000.0);
+    var absoluteTimer = event_.Timestamp.Seconds;
     return new TimelineEvent()
     {
-      absoluteTimer = absoluteTimer,
-      relativeTimer = (stage == null || stage.abilityId == null) ? 0 : absoluteTimer - stage.startTimer,
-      spellId = event_.AbilityGameId.ToString(),
-      options = ToTimerOptions(stage)
+      AbsoluteTimer = absoluteTimer,
+      RelativeTimer = (stage == null || stage.AbilityId == null) ? 0 : absoluteTimer - stage.StartTimer,
+      SpellId = event_.AbilityGameId.ToString(),
+      Options = ToTimerOptions(stage)
     };
   }
+
   public TimerOptions ToTimerOptions(BossStage? stage)
   {
     return new TimerOptions()
     {
-      eventSpellId = stage?.abilityId?.ToString(),
-      castCount = stage?.eventCount,
-      condEvent = stage?.eventTypeForNote
+      EventSpellId = stage?.AbilityId?.ToString(),
+      CastCount = stage?.EventCount,
+      Event = stage?.EventTypeForNote
     };
   }
 
@@ -51,16 +51,16 @@ public class ToTimelineDataTransformer
     var wlPlayers = report.Players;
 
     var specs = _cacheService.GetSpecs();
-    var DBSpecsDps = (specs ?? new List<WoWSpec>()).Where(x => x.role == WoWSpecRole.MELEE || x.role == WoWSpecRole.RANGED).ToList();
-    var DBSpecsHealers = (specs ?? new List<WoWSpec>()).Where(x => x.role == WoWSpecRole.HEALER).ToList();
-    var DBSpecsTanks = (specs ?? new List<WoWSpec>()).Where(x => x.role == WoWSpecRole.TANK).ToList();
+    var DBSpecsDps = (specs ?? new List<WoWSpec>()).Where(x => x.Role == WoWSpecRole.MELEE || x.Role == WoWSpecRole.RANGED).ToList();
+    var DBSpecsHealers = (specs ?? new List<WoWSpec>()).Where(x => x.Role == WoWSpecRole.HEALER).ToList();
+    var DBSpecsTanks = (specs ?? new List<WoWSpec>()).Where(x => x.Role == WoWSpecRole.TANK).ToList();
 
     AddPlayersByClass(players, wlPlayers.Dps, DBSpecsDps);
     AddPlayersByClass(players, wlPlayers.Tanks, DBSpecsTanks);
     AddPlayersBySpec(players, wlPlayers.Healers, DBSpecsHealers);
 
     AddPlayersCasts(players, report.PlayersCasts, boss);
-    players.RemoveAll(x => x.events.Count == 0);
+    players.RemoveAll(x => x.Events.Count == 0);
 
     return players;
   }
@@ -69,7 +69,7 @@ public class ToTimelineDataTransformer
   {
     foreach (var player in wlPlayers)
     {
-      var findSpec = dbSpecs.FirstOrDefault(x => x.inGameClass == player.Type);
+      var findSpec = dbSpecs.FirstOrDefault(x => x.InGameClass == player.Type);
       if (findSpec == null) continue;
 
       AddPlayerToDictionary(players, player, findSpec);
@@ -80,7 +80,7 @@ public class ToTimelineDataTransformer
   {
     foreach (var player in wlPlayers)
     {
-      var findSpec = dbSpecs.FirstOrDefault(x => x.inGameClass == player.Type && x.name == player.Specs[0].Spec);
+      var findSpec = dbSpecs.FirstOrDefault(x => x.InGameClass == player.Type && x.Name == player.Specs[0].Spec);
       if (findSpec == null) continue;
 
       AddPlayerToDictionary(players, player, findSpec);
@@ -96,8 +96,8 @@ public class ToTimelineDataTransformer
   private void AddPlayersCasts(Dictionary<string, Player> players, List<WLEvent> playersCasts, Boss boss)
   {
     // supported abilities in db
-    var supportedSpecsAbilities = (_cacheService.GetAbilities() ?? new List<Ability>()).GroupBy(x => x.WoWSpecId);
-    var bossStages = boss.stages.OrderBy(x => x.startTimer).ToList();
+    var supportedSpecsAbilities = (_cacheService.GetAbilities() ?? new List<Ability>()).GroupBy(x => x.WowSpecId);
+    var bossStages = boss.Stages.OrderBy(x => x.StartTimer).ToList();
     // group events by player
     var eventsGroups = playersCasts.GroupBy(x => x.SourceID);
 
@@ -106,15 +106,15 @@ public class ToTimelineDataTransformer
       players.TryGetValue(playerCasts.Key.ToString(), out var player);
       if (player == null) continue;
 
-      var supportedPlayerAbilities = supportedSpecsAbilities.FirstOrDefault(x => x.Key == player.specId);
+      var supportedPlayerAbilities = supportedSpecsAbilities.FirstOrDefault(x => x.Key == player.SpecId);
       if (supportedPlayerAbilities == null) continue;
 
       foreach (var playerCast in playerCasts)
       {
-        if (supportedPlayerAbilities.Any(x => x.id == playerCast.AbilityGameId.ToString()))
+        if (supportedPlayerAbilities.Any(x => x.Id == playerCast.AbilityGameId.ToString()))
         {
-          var currentStage = bossStages.FirstOrDefault(x => x.endTimer > playerCast.Timestamp / 1000.0);
-          player.events.Add(ToTimelineEvent(playerCast, currentStage));
+          var currentStage = bossStages.FirstOrDefault(x => x.EndTimer > playerCast.Timestamp.Seconds);
+          player.Events.Add(ToTimelineEvent(playerCast, currentStage));
         }
       }
     }

@@ -1,4 +1,4 @@
-namespace WarcraftLogsAnalyzer.Models;
+namespace WarcraftLogs.Query;
 
 public enum HostilityType { Friendlies, Enemies }
 public enum DataType

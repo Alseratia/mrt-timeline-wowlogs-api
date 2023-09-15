@@ -1,7 +1,8 @@
 using System.Net.Http.Headers;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace WarcraftLogsClient;
+using WarcraftLogs;
+
 public static class WarcraftLogsGraphQLClientExtentions
 {
   public static IServiceCollection AddWarcraftLogsGraphQLClient(this IServiceCollection services)
@@ -11,6 +12,7 @@ public static class WarcraftLogsGraphQLClientExtentions
       {
         httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
       });
+
     services.AddSingleton<WarcraftLogsGraphQLClient>();
     return services;
   }

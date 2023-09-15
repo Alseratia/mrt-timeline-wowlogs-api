@@ -1,4 +1,5 @@
-namespace WarcraftLogsAnalyzer.Models;
+namespace WarcraftLogs.Query;
+
 public class PlayersCastsQuery : AbstractQuery<List<WLEvent>>
 {
   public PlayersCastsQuery(string code, int fightId)

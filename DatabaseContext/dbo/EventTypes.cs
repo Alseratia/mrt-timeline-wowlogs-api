@@ -1,6 +1,6 @@
 using NpgsqlTypes;
 
-namespace Timeline;
+namespace TimelineDatabaseContext;
 
 [PgName("EventType")]
 public enum EventType

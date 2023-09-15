@@ -1,4 +1,4 @@
-namespace WarcraftLogsAnalyzer.Models;
+namespace WarcraftLogs.Query;
 
 public class BossEventsQuery : AbstractQuery<List<WLEvent>>
 {

@@ -1,4 +1,4 @@
-namespace WarcraftLogsAnalyzer.Models;
+namespace WarcraftLogs.Query;
 
 public abstract class AbstractQuery<T> where T : class
 {

@@ -1,10 +1,11 @@
 using Microsoft.EntityFrameworkCore;
 
-namespace Timeline;
-public class TimelineDbContext : DbContext
+namespace TimelineDatabaseContext;
+
+public class DatabaseContext : DbContext
 {
-  public TimelineDbContext(DbContextOptions<TimelineDbContext> options)
-        : base(options) { }
+  public DatabaseContext(DbContextOptions<DatabaseContext> options)
+        : base(options) {  }
   public DbSet<Zone> Zone { get; set; }
   public DbSet<Boss> Boss { get; set; }
   public DbSet<BossAbility> BossAbility { get; set; }

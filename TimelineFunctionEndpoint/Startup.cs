@@ -1,8 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging.Console;
 
-using Timeline;
-using WarcraftLogsAnalyzer;
+namespace Timeline;
 
 public class Startup
 {
@@ -16,9 +16,12 @@ public class Startup
   public void ConfigureServices(IServiceCollection services)
   {
     services.AddControllers()
-            .AddNewtonsoftJson(
-                options => options.SerializerSettings.Converters.Add(new Newtonsoft.Json.Converters.StringEnumConverter())
-            );
+            // I don't like javascript naming convention
+            .AddNewtonsoftJson(options =>
+                {
+                  options.SerializerSettings.Converters.Add(new Newtonsoft.Json.Converters.StringEnumConverter());
+                  options.SerializerSettings.ContractResolver = new Newtonsoft.Json.Serialization.CamelCasePropertyNamesContractResolver();
+                });
 
     // register other projects DI
     var connectionString = Configuration.GetConnectionString("DbConnection");
@@ -27,8 +30,9 @@ public class Startup
 
     // register current project DI
     services.AddSingleton<IMemoryCache, MemoryCache>()
+            .AddSingleton<ConsoleFormatter, YandexLoggerFormatter>()
             .AddScoped<TimelineService>()
-            .AddScoped<ToTimelineDataTransformer>()
+            .AddScoped<ToDtoTransformer>()
             .AddScoped<CacheService>();
 
     // register swagger
@@ -39,19 +43,12 @@ public class Startup
   public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
   {
     app.UseSwagger();
-    app.UseSwaggerUI();
-    // TODO неотловленые исключения в лог
-    // TODO middleware
-    // if (app.Environment.IsDevelopment())
-    // {
-    //   app.UseSwaggerUI();
-    // }
+    if (env.IsDevelopment()) app.UseSwaggerUI();
 
-    app.UseStatusCodePages();
-    app.UseHttpsRedirection();
+    app.UseMiddleware<ErrorHandlingMiddleware>();
 
     app.UseRouting();
-    app.UseAuthorization();
+
     app.UseEndpoints(endpoints =>
     {
       endpoints.MapControllers();

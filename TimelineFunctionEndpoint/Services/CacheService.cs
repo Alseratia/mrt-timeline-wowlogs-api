@@ -1,16 +1,16 @@
-using Timeline;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 
-/// <summary>
-/// The service is designed to cache queries to the database and retrieve data from the cache or database.
-/// </summary>
+using TimelineDatabaseContext;
+
+namespace Timeline;
+
 public class CacheService
 {
   private readonly IMemoryCache _memoryCache;
-  private readonly IDbContextFactory<TimelineDbContext> _dbFactory;
-  private readonly object _cacheLock = new object();
-  public CacheService(IMemoryCache memoryCache, IDbContextFactory<TimelineDbContext> dbFactory)
+  private readonly IDbContextFactory<DatabaseContext> _dbFactory;
+  private readonly object _cacheLock = new();
+  public CacheService(IMemoryCache memoryCache, IDbContextFactory<DatabaseContext> dbFactory)
   {
     _memoryCache = memoryCache;
     _dbFactory = dbFactory;
@@ -21,17 +21,17 @@ public class CacheService
     string key = $"AllBoss_{bossId}_{difficulty}";
 
     return GetFromCacheOrDb(key, (_db) => _db.Boss.AsNoTracking()
-                                               .Include(x => x.abilities)
-                                               .Include(x => x.events)
-                                               .Include(x => x.stages)
-                                               .FirstOrDefault(x => x.inGameId == bossId && x.difficulty == difficulty));
+                                               .Include(x => x.Abilities)
+                                               .Include(x => x.Events)
+                                               .Include(x => x.Stages)
+                                               .FirstOrDefault(x => x.InGameId == bossId && x.Difficulty == difficulty));
   }
 
   public List<BossAbility>? GetBossAbilities(string bossId)
   {
     string key = $"BossAbilities_{bossId}";
     return GetFromCacheOrDb(key, (_db) => _db.BossAbility.AsNoTracking()
-                                                      .Where(x => x.bossId == bossId)
+                                                      .Where(x => x.BossId == bossId)
                                                       .ToList());
   }
 
@@ -39,7 +39,7 @@ public class CacheService
   {
     string key = $"BossEvents_{bossId}";
     return GetFromCacheOrDb(key, (_db) => _db.BossEvent.AsNoTracking()
-                                                    .Where(x => x.bossId == bossId)
+                                                    .Where(x => x.BossId == bossId)
                                                     .ToList());
   }
 
@@ -47,7 +47,7 @@ public class CacheService
   {
     string key = $"BossStages_{bossId}";
     return GetFromCacheOrDb(key, (_db) => _db.BossStage.AsNoTracking()
-                                                    .Where(x => x.bossId == bossId)
+                                                    .Where(x => x.BossId == bossId)
                                                     .ToList());
   }
 
@@ -63,7 +63,7 @@ public class CacheService
     return GetFromCacheOrDb(key, (_db) => _db.Ability.ToList());
 
   }
-  private T? GetFromCacheOrDb<T>(string key, Func<TimelineDbContext, T?> getDataFromDb)
+  private T? GetFromCacheOrDb<T>(string key, Func<DatabaseContext, T?> getDataFromDb)
   {
     lock (_cacheLock)
     {
@@ -74,10 +74,6 @@ public class CacheService
         using var db = _dbFactory.CreateDbContext();
         data = getDataFromDb(db);
         if (data != null) _memoryCache.Set(key, data);
-      }
-      else
-      {
-        Console.WriteLine($"Get {key} from cache");
       }
       return data;
     }

@@ -1,4 +1,4 @@
-namespace WarcraftLogsAnalyzer.Models;
+namespace WarcraftLogs;
 
 public static class WarcraftLogsAnalyzerModelsExtentions
 {
@@ -29,7 +29,8 @@ public static class WarcraftLogsAnalyzerModelsExtentions
 
         if (startEvent != null && (ability.Type == WLEventType.cast || ability.Type == WLEventType.removebuff))
         {
-          var duration = Convert.ToInt32((ability.Timestamp - startEvent.Timestamp) / 1000.0);
+          var diff = ability.Timestamp - startEvent.Timestamp;
+          int duration = (int)diff.TotalSeconds;
           startEvent.Duration = duration;
           ability.Duration = duration;
           startEvent = null;

@@ -1,8 +1,5 @@
 using Microsoft.EntityFrameworkCore;
 
-using Timeline;
-using WarcraftLogsAnalyzer;
-
 public class Startup
 {
   public Startup(IConfiguration configuration)
@@ -26,7 +23,7 @@ public class Startup
 
     // register current project DI
     services.AddScoped<UpdateDBService>()
-            .AddScoped<ToDBDataTransformer>();
+            .AddScoped<ToDboTransformer>();
 
     // register swagger
     services.AddEndpointsApiExplorer();

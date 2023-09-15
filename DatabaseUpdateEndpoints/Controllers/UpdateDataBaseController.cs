@@ -28,4 +28,5 @@ public class UpdateDatabaseController : Controller
   {
     return await _updateDBService.UploadRaidBosses(raidName);
   }
+
 }

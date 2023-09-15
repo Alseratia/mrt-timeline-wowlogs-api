@@ -2,12 +2,14 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
 
-namespace Timeline;
-public static class TimelineDbContextExtensions
+using TimelineDatabaseContext;
+
+public static class DatabaseContextExtensions
 {
   public static IServiceCollection AddTimelineDatabaseContext(this IServiceCollection services, string? connectionString)
   {
     var dataSourceBuilder = new NpgsqlDataSourceBuilder(connectionString);
+
     dataSourceBuilder.MapEnum<Difficulty>()
                      .MapEnum<FightType>()
                      .MapEnum<EventType>()
@@ -19,7 +21,9 @@ public static class TimelineDbContextExtensions
                      .MapComposite<BossStage>()
                      .MapComposite<WoWSpec>()
                      .MapComposite<Ability>();
-    services.AddDbContextFactory<TimelineDbContext>(options => options.UseNpgsql(dataSourceBuilder.Build()));
+
+    services.AddDbContextFactory<DatabaseContext>(options => options.UseNpgsql(dataSourceBuilder.Build())
+                                                                    .UseCamelCaseNamingConvention());
     return services;
   }
 }

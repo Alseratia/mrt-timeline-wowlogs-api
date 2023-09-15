@@ -2,7 +2,7 @@ using System.Net.Http.Headers;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 
-namespace WarcraftLogsClient;
+namespace WarcraftLogs;
 
 /// <summary>
 /// Represents a client for accessing the World of Warcraft combat logs through the WarcraftLogs GraphQL API.
@@ -14,10 +14,11 @@ public class WarcraftLogsGraphQLClient
   private readonly IHttpClientFactory _httpClientFactory;
   private OAuthAccessToken? _accessToken;
   private DateTime _accessTokenExpiration;
+
   private readonly string _clientId;
   private readonly string _clientSecret;
-  private readonly string _oAuthUrl = "https://www.warcraftlogs.com/oauth/token";
 
+  private readonly string _oAuthUrl = "https://www.warcraftlogs.com/oauth/token";
   private readonly string _apiUrl = "https://www.warcraftlogs.com/api/v2/client";
 
   public WarcraftLogsGraphQLClient(IConfiguration configuration, IHttpClientFactory clientFactory)
@@ -64,7 +65,7 @@ public class WarcraftLogsGraphQLClient
       _accessToken = JsonConvert.DeserializeObject<OAuthAccessToken>(responseContent) ??
         throw new Exception("WarcraftLogs is not available now");
 
-      _accessTokenExpiration = DateTime.Now.AddSeconds(_accessToken._expiresIn);
+      _accessTokenExpiration = DateTime.Now.AddSeconds(_accessToken.ExpiresIn);
     }
   }
 
