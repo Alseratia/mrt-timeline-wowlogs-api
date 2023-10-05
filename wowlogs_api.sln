@@ -1,0 +1,55 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WarcraftLogsClient", "WarcraftLogsClient\WarcraftLogsClient.csproj", "{1D845179-995F-44FB-A1C6-2CC7BB67D8AE}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WarcraftLogsAnalyzer", "WarcraftLogsAnalyzer\WarcraftLogsAnalyzer.csproj", "{FD52F512-6E98-47AB-BE0A-EB319DB21D97}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TimelineFunctionEndpoints", "TimelineFunctionEndpoint\TimelineFunctionEndpoints.csproj", "{89640023-250C-402E-B770-59963D2EAA64}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DatabaseUpdateEndpoints", "DatabaseUpdateEndpoints\DatabaseUpdateEndpoints.csproj", "{4A3763EE-3FD8-4C4B-8C0B-55254815802D}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DatabaseContext", "DatabaseContext\DatabaseContext.csproj", "{095300A1-0AA4-41F9-9923-BBB22B6670E7}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TimelineCache", "TimelineCache\TimelineCache.csproj", "{CA2B5B76-89FB-461E-B958-59F30C8C69CE}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1D845179-995F-44FB-A1C6-2CC7BB67D8AE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1D845179-995F-44FB-A1C6-2CC7BB67D8AE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1D845179-995F-44FB-A1C6-2CC7BB67D8AE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1D845179-995F-44FB-A1C6-2CC7BB67D8AE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FD52F512-6E98-47AB-BE0A-EB319DB21D97}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FD52F512-6E98-47AB-BE0A-EB319DB21D97}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FD52F512-6E98-47AB-BE0A-EB319DB21D97}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FD52F512-6E98-47AB-BE0A-EB319DB21D97}.Release|Any CPU.Build.0 = Release|Any CPU
+		{89640023-250C-402E-B770-59963D2EAA64}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{89640023-250C-402E-B770-59963D2EAA64}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{89640023-250C-402E-B770-59963D2EAA64}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{89640023-250C-402E-B770-59963D2EAA64}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4A3763EE-3FD8-4C4B-8C0B-55254815802D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4A3763EE-3FD8-4C4B-8C0B-55254815802D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4A3763EE-3FD8-4C4B-8C0B-55254815802D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4A3763EE-3FD8-4C4B-8C0B-55254815802D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{095300A1-0AA4-41F9-9923-BBB22B6670E7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{095300A1-0AA4-41F9-9923-BBB22B6670E7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{095300A1-0AA4-41F9-9923-BBB22B6670E7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{095300A1-0AA4-41F9-9923-BBB22B6670E7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CA2B5B76-89FB-461E-B958-59F30C8C69CE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CA2B5B76-89FB-461E-B958-59F30C8C69CE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CA2B5B76-89FB-461E-B958-59F30C8C69CE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CA2B5B76-89FB-461E-B958-59F30C8C69CE}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {6FBDEE43-0162-4AB1-8B19-2284210CC578}
+	EndGlobalSection
+EndGlobal
