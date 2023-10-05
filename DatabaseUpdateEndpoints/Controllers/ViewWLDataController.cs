@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using WarcraftLogs;
+using WarcraftLogsAnalyzer;
 
 /// <summary>
 /// Controller for viewing data from Warcraftlogs

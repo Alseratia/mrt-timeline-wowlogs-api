@@ -1,9 +1,9 @@
-namespace WarcraftLogs.Query;
+namespace WarcraftLogsAnalyzer.Query;
 
-public class EventsQuery : AbstractQuery<List<WLEvent>>
+public class EventsQuery : BaseQuery<List<WLEvent>>
 {
   public EventsQuery(string code, int fightId, HostilityType? HostilityType,
-                     DataType? EventType, int? sourceId, int? abilityId)
+                     EventDataType? EventType, int? sourceId, int? abilityId)
   {
     Query = $@"
       query {{

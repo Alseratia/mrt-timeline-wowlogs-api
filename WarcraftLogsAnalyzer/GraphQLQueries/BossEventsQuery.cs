@@ -1,9 +1,14 @@
-namespace WarcraftLogs.Query;
+namespace WarcraftLogsAnalyzer.Query;
 
-public class BossEventsQuery : AbstractQuery<List<WLEvent>>
+public class BossEventsQuery : BaseQuery<List<WLEvent>>
 {
-  public BossEventsQuery(string code, int fightId)
+  public BossEventsQuery(string code, int fightId, FilterExpression? expression = null)
   {
+    expression?.AndWhere(x => (x.Type == EventType.cast || x.Type == EventType.begincast ||
+                           x.Type == EventType.applybuff || x.Type == EventType.removebuff) && x.SourceType == SourceType.Npc);
+    if (expression == null)
+      expression = FilterExpression.Where(x => (x.Type == EventType.cast || x.Type == EventType.begincast ||
+                                                    x.Type == EventType.applybuff || x.Type == EventType.removebuff) && x.SourceType == SourceType.Npc);
     Query = $@"
           query {{
             reportData {{
@@ -14,19 +19,12 @@ public class BossEventsQuery : AbstractQuery<List<WLEvent>>
                   startTime
                   endTime
                 }}
-                bossCasts:
+                bossEvents:
                 events(
-                  fightIDs: {fightId}
-                  hostilityType: Enemies 
-                  dataType: Casts
+                  fightIDs: {fightId},
+                  hostilityType: Enemies,
                   limit: 1000000000
-                ) {{ data }}
-                bossBuffs:
-                events(
-                  fightIDs: {fightId}
-                  hostilityType: Enemies 
-                  dataType: Buffs
-                  limit: 1000000000
+                  {$",filterExpression: \"{expression}\""}
                 ) {{ data }}
               }}
             }}

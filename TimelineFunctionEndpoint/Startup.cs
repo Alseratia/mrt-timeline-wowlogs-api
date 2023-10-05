@@ -1,6 +1,5 @@
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging.Console;
+using TimelineCache;
 
 namespace Timeline;
 
@@ -16,7 +15,7 @@ public class Startup
   public void ConfigureServices(IServiceCollection services)
   {
     services.AddControllers()
-            // I don't like javascript naming convention
+            // I don't like javaScript naming convention
             .AddNewtonsoftJson(options =>
                 {
                   options.SerializerSettings.Converters.Add(new Newtonsoft.Json.Converters.StringEnumConverter());
@@ -24,16 +23,16 @@ public class Startup
                 });
 
     // register other projects DI
-    var connectionString = Configuration.GetConnectionString("DbConnection");
-    services.AddTimelineDatabaseContext(connectionString)
+    services.AddTimelineDatabaseContext(Configuration)
             .AddWarcraftLogsAnalyzer();
 
     // register current project DI
-    services.AddSingleton<IMemoryCache, MemoryCache>()
+    services.AddScoped<TimelineService>()
             .AddSingleton<ConsoleFormatter, YandexLoggerFormatter>()
-            .AddScoped<TimelineService>()
-            .AddScoped<ToDtoTransformer>()
-            .AddScoped<CacheService>();
+            .AddScoped<ToDtoTransformer>();
+
+    // Redis cache service
+    services.AddRadisTimelineCache(Configuration);
 
     // register swagger
     services.AddEndpointsApiExplorer();

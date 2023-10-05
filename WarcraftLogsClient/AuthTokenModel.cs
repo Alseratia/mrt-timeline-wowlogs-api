@@ -1,6 +1,6 @@
 using Newtonsoft.Json;
 
-namespace WarcraftLogs;
+namespace WarcraftLogsClient;
 
 public record OAuthAccessToken
 {

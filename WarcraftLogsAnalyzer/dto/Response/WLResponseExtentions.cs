@@ -1,4 +1,4 @@
-﻿namespace WarcraftLogs;
+﻿namespace WarcraftLogsAnalyzer;
 
 public static class WLResponseExtentions
 {
@@ -15,13 +15,7 @@ public static class WLResponseExtentions
     => response?.Data?.ReportData?.Report?.PlayerDetails?.Data?.PlayerDetails;
 
   public static List<WLEvent>? GetBossEvents(this WLResponse? response)
-    => response?.Data?.ReportData?.Report?.BossEvents;
-
-  public static List<WLEvent>? GetBossCasts(this WLResponse? response)
-    => response?.Data?.ReportData?.Report?.BossCasts?.Data;
-
-  public static List<WLEvent>? GetBossBuffs(this WLResponse? response)
-    => response?.Data?.ReportData?.Report?.BossBuffs?.Data;
+    => response?.Data?.ReportData?.Report?.BossEvents?.Data;
 
   public static List<WLEvent>? GetPlayersCasts(this WLResponse? response)
     => response?.Data?.ReportData?.Report?.PlayersCasts?.Data;
@@ -51,22 +45,10 @@ public static class WLResponseExtentions
   /// <returns></returns>
   public static WLResponse? FinilizeEvents(this WLResponse? response, bool calcDurationAndNumbers)
   {
-    response.ConcatBossEvents();
     response.NormalizeEventTimers();
 
     if (calcDurationAndNumbers) response.CalcBossEventsDuration();
     return response;
-  }
-
-  private static List<WLEvent>? ConcatBossEvents(this WLResponse? response)
-  {
-    var bossCasts = response?.Data?.ReportData?.Report?.BossCasts?.Data;
-    var bossBuffs = response?.Data?.ReportData?.Report?.BossBuffs?.Data;
-    if (bossCasts == null || bossBuffs == null) return null;
-
-    var bossEvents = bossCasts.Concat(bossBuffs).ToList();
-    response!.Data!.ReportData!.Report!.BossEvents = bossEvents;
-    return bossEvents;
   }
 
   private static WLResponse? NormalizeEventTimers(this WLResponse? response)
@@ -74,19 +56,17 @@ public static class WLResponseExtentions
     var fight = response?.Data?.ReportData?.Report?.Fights?[0];
     if (fight == null) return response;
 
-    var bossCasts = response?.Data?.ReportData?.Report?.BossCasts?.Data;
-    var bossBuffs = response?.Data?.ReportData?.Report?.BossBuffs?.Data;
-    var playersCasts = response?.Data?.ReportData?.Report?.PlayersCasts?.Data;
+    var bossEvents = response.GetBossEvents();
+    var playersCasts = response.GetPlayersCasts();
 
     playersCasts?.ForEach(x => x.Timestamp -= fight.StartTime);
-    bossCasts?.ForEach(x => x.Timestamp -= fight.StartTime);
-    bossBuffs?.ForEach(x => x.Timestamp -= fight.StartTime);
+    bossEvents?.ForEach(x => x.Timestamp -= fight.StartTime);
     return response;
   }
 
   private static WLResponse? CalcBossEventsDuration(this WLResponse? response)
   {
-    response?.Data?.ReportData?.Report?.BossEvents?.CalcDurationAndNumber();
+    response.GetBossEvents()?.CalcDurationAndNumber();
     return response;
   }
 }

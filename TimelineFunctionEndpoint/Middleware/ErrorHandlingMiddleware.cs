@@ -15,15 +15,14 @@ public class ErrorHandlingMiddleware
   {
     try
     {
-      throw new Exception("Hehe");
       await _next.Invoke(context);
     }
     catch (Exception ex)
     {
-      _logger.LogError($"Unhandled exception occured\nPath = {context.Request.Path}\nException = {ex}\n");
+      _logger.LogError($"Unhandled exception occured\rPath = {context.Request.Path}\rException = {ex}\n");
 
       context.Response.StatusCode = StatusCodes.Status500InternalServerError;
-      context.Response.ContentType = "text/plain";
+      context.Response.ContentType = "application/json";
       await context.Response.WriteAsync("An internal server error occurred");
     }
   }

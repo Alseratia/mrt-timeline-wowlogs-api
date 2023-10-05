@@ -1,7 +1,7 @@
 using System.Net.Http.Headers;
 using Microsoft.Extensions.DependencyInjection;
 
-using WarcraftLogs;
+using WarcraftLogsClient;
 
 public static class WarcraftLogsGraphQLClientExtentions
 {

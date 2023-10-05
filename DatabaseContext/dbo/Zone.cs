@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace TimelineDatabaseContext;
@@ -9,6 +10,6 @@ public class Zone
 {
   public int Id { get; set; }
   public string Name { get; set; } = null!;
-
-  public ICollection<Boss> Boss { get; set; } = new List<Boss>();
+  [JsonIgnore]
+  public ICollection<Boss>? Boss { get; set; }
 }

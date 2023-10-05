@@ -1,7 +1,7 @@
-namespace WarcraftLogs.Query;
+namespace WarcraftLogsAnalyzer.Query;
 
-public abstract class AbstractQuery<T> where T : class
+public abstract class BaseQuery<T> where T : class
 {
   protected virtual string Query { get; set; } = "";
-  public static implicit operator string(AbstractQuery<T> query) => query.Query;
+  public static implicit operator string(BaseQuery<T> query) => query.Query;
 }

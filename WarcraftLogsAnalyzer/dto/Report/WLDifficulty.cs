@@ -1,11 +1,12 @@
-﻿namespace WarcraftLogs;
+﻿namespace WarcraftLogsAnalyzer;
 
 public enum WLDifficulty
 {
     MYTHIC = 5,
     HEROIC = 4,
     NORMAL = 3,
-    LFR = 2,
-    Unknown = 1,
-    NaN = 0
+    FLEX = 2,
+    LFR = 1,
+    DUNGEON = 10,
+    WILDSTAR_RAID = 100
 }

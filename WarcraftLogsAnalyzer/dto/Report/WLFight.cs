@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
 
-namespace WarcraftLogs;
+namespace WarcraftLogsAnalyzer;
 
 public class WLFight
 {
@@ -10,6 +10,6 @@ public class WLFight
   public TimeSpan StartTime { get; set; }
   [JsonConverter(typeof(TimeSpanMillisecondsConverter))]
   public TimeSpan EndTime { get; set; }
-  public WLDifficulty Difficulty { get; set; }
-  public int GetFightDuration() => (EndTime - StartTime).Seconds;
+  public WLDifficulty? Difficulty { get; set; }
+  public int GetFightDuration() => (int)((EndTime - StartTime).TotalSeconds);
 }

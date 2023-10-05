@@ -1,4 +1,4 @@
-namespace WarcraftLogs;
+namespace WarcraftLogsAnalyzer;
 
 public static class WarcraftLogsAnalyzerModelsExtentions
 {

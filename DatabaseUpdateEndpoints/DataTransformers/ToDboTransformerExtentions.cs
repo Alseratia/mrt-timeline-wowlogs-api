@@ -1,5 +1,5 @@
 ﻿using TimelineDatabaseContext;
-using WarcraftLogs;
+using WarcraftLogsAnalyzer;
 
 public static class ToDboTransformerExtentions
 {

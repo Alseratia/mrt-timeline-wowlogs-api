@@ -1,6 +1,6 @@
-namespace WarcraftLogs.Query;
+namespace WarcraftLogsAnalyzer.Query;
 
-public class FightQuery : AbstractQuery<WLFight>
+public class FightQuery : BaseQuery<WLFight>
 {
   public FightQuery(string code, int fightId)
   {

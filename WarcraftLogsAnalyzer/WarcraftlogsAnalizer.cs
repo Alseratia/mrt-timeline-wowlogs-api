@@ -1,7 +1,8 @@
 using Newtonsoft.Json;
-using WarcraftLogs.Query;
+using WarcraftLogsAnalyzer.Query;
+using WarcraftLogsClient;
 
-namespace WarcraftLogs;
+namespace WarcraftLogsAnalyzer;
 
 /// <summary>
 /// The class is designed to send pre-written queries via the warcraft logs client and convert the response into a convenient form.
@@ -21,6 +22,13 @@ public class WarcraftlogsAnalyzer
     var query = new FightQuery(code, fightId);
     var responce = await GetResponseObjectAsync(query);
     return responce.GetFight();
+  }
+
+  public async Task<int?> GetLastFightId(string code)
+  {
+    var query = new FightsQuery(code);
+    var responce = await GetResponseObjectAsync(query);
+    return responce?.Data?.ReportData?.Report?.Fights?.Count();
   }
 
   public async Task<List<WLZone>?> GetAllZonesAndEncountersAsync()
@@ -72,15 +80,22 @@ public class WarcraftlogsAnalyzer
     return response.GetPlayersCasts();
   }
 
-  public async Task<WLReportData?> GetReportData(string code, int fightId, bool calcDurationAndNumbers)
+  public async Task<WLReportData?> GetReportData(string code, uint fightId, 
+    IEnumerable<int>? filterBossCastsId = null, IEnumerable<int>? filterPlayersCastsId = null)
   {
-    var query = new ReportQuery(code, fightId);
+    FilterExpression? bossFilter = null;
+    FilterExpression? playersFilter = null;
+    if (filterBossCastsId != null) bossFilter = FilterExpression.AnyOf(x => x.AbilityId, filterBossCastsId);
+    if (filterPlayersCastsId != null) playersFilter = FilterExpression.AnyOf(x => x.AbilityId, filterPlayersCastsId);
+
+    var query = new ReportQuery(code, fightId, bossFilter, playersFilter);
 
     var response = await GetResponseObjectAsync(query);
-    response.FinilizeEvents(calcDurationAndNumbers);
+    response.FinilizeEvents(true);
 
     return response.GetReportData();
   }
+
 
   private async Task<string> GetResponseAsync(string query)
   {

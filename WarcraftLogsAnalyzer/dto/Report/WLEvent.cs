@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
 
-namespace WarcraftLogs;
+namespace WarcraftLogsAnalyzer;
 public class WLEvent
 {
   [JsonConverter(typeof(TimeSpanMillisecondsConverter))]

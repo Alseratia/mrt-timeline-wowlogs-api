@@ -1,4 +1,4 @@
-using WarcraftLogs;
+using WarcraftLogsAnalyzer;
 using TimelineDatabaseContext;
 
 
@@ -13,8 +13,9 @@ public class ToDboTransformer
     _logAnalyzer = logAnalyzer;
   }
 
-  public Boss ToBoss(WLFight fight, WLZone zone)
+  public static Boss ToBoss(WLFight fight, WLZone zone)
   {
+    Enum.TryParse(fight.Difficulty.ToString(), out Difficulty difficulty);
     return new Boss()
     {
       Id = Guid.NewGuid().ToString(),
@@ -23,12 +24,13 @@ public class ToDboTransformer
       FightDuration = fight.GetFightDuration(),
       ZoneId = zone.Id,
       OrderInRaid = zone.Encounters.TakeWhile(x => x.Name != fight.Name).Count(),
-      Difficulty = fight.Difficulty.ToDifficulty(),
-      FightType = FightType.STAGE_DEPENDANT_TIMERS
+      Difficulty = difficulty,
+      FightType = FightType.STAGE_DEPENDANT_TIMERS,
+      Zone = new Zone() { Id = zone.Id, Name = zone.Name }
     };
   }
 
-  public Boss ToBoss(WLBoss wlBoss, WLZone zone)
+  public static Boss ToBoss(WLBoss wlBoss, WLZone zone)
   {
     return new Boss()
     {
@@ -38,11 +40,12 @@ public class ToDboTransformer
       FightDuration = 0,
       ZoneId = zone.Id,
       OrderInRaid = zone.Encounters.TakeWhile(x => x.Name != wlBoss.Name).Count(),
-      FightType = FightType.STAGE_DEPENDANT_TIMERS
+      FightType = FightType.STAGE_DEPENDANT_TIMERS,
+      Zone = new Zone() { Id = zone.Id, Name = zone.Name }
     };
   }
 
-  public BossEvent ToBossEvent(WLEvent event_, BossStage stage, BossAbility ability)
+  public static BossEvent ToBossEvent(WLEvent event_, BossStage stage, BossAbility ability)
   {
     return new BossEvent()
     {
@@ -53,11 +56,11 @@ public class ToDboTransformer
       EventTypeForNote = ((EventType)event_.Type).GetEventTypeForNote(),
       AbilityId = ability.Id,
       AbilityCount = event_.CastNumber,
-      AbsoluteTimer = event_.Timestamp.Seconds
+      AbsoluteTimer = (int)event_.Timestamp.TotalSeconds
     };
   }
 
-  public BossAbility ToAbilityAsync(Boss boss, WLEvent event_, WLAbility ability)
+  public static BossAbility ToBossAbility(Boss boss, WLEvent event_, WLAbility ability)
   {
     return new BossAbility()
     {
@@ -67,6 +70,7 @@ public class ToDboTransformer
       Icon = $"https://wow.zamimg.com/images/wow/icons/large/{ability.Icon}",
       Duration = event_.Duration,
       IsTracked = false,
+      BossId = boss.Id,
       Boss = boss
     };
   }
@@ -76,8 +80,9 @@ public class ToDboTransformer
     List<BossAbility> result = new();
 
     var uniqueEvents = events.DistinctBy(x => x.AbilityGameId);
+    if (boss.Abilities == null) boss.Abilities = new List<BossAbility>();
     var newEventAbilities = uniqueEvents.Where(wlAbility => !boss.Abilities.AsEnumerable()
-                                                            .Any(dbAbility => dbAbility.InGameId == wlAbility.AbilityGameId))
+                                                            .Any(dbAbility => dbAbility.InGameId == wlAbility.AbilityGameId && wlAbility.AbilityGameId != 1))
                                                             .ToList();
 
     foreach (var newEvent in newEventAbilities)
@@ -85,28 +90,30 @@ public class ToDboTransformer
       var wlAbility = await _logAnalyzer.GetAbilityAsync(newEvent.AbilityGameId);
       if (wlAbility == null) throw new Exception($"Can't get {newEvent.AbilityGameId} ability from warcraftlogs");
 
-      result.Add(ToAbilityAsync(boss, newEvent, wlAbility));
+      result.Add(ToBossAbility(boss, newEvent, wlAbility));
     }
     return result;
   }
 
-  public List<BossEvent> ToBossEvents(Boss boss, List<WLEvent> events)
+  public static List<BossEvent> ToBossEvents(Boss boss, List<WLEvent> events)
   {
     // get this boss stages, can't be 0
-    var result = new List<BossEvent>();
-    var bossStages = boss.Stages.ToList();
-    if (bossStages.Count == 0) throw new Exception($"Can't find stages for boss {boss.Id}");
+    var bossStages = boss.Stages?.OrderBy(x => x.StartTimer).ToList();
+    if (bossStages == null || bossStages.Count == 0) throw new Exception($"Can't find stages for boss {boss.Id}");
+    if (boss.Abilities == null) throw new Exception($"Boss don't have abilities");
 
+    List<BossEvent> result = new();
     // Create BossEvent and bind to stage
     foreach (var event_ in events)
     {
-      var eventTimerSec = event_.Timestamp.Seconds;
+      var eventTimerSec = (int)event_.Timestamp.TotalSeconds;
+
       var curStage = bossStages.LastOrDefault(stage => stage.StartTimer <= eventTimerSec)!;
       var curAbility = boss.Abilities.LastOrDefault(ability => ability.InGameId == event_.AbilityGameId &&
                                                                ability.BossId == boss.Id)!;
 
       var newEvent = ToBossEvent(event_, curStage, curAbility);
-      newEvent.RelativeTimer = boss.FightType == FightType.STAGE_DEPENDANT_TIMERS ? newEvent.AbsoluteTimer - curStage.StartTimer : null;
+      newEvent.RelativeTimer = boss.FightType == FightType.STAGE_DEPENDANT_TIMERS ? newEvent.AbsoluteTimer - curStage.StartTimer : null; // TODO
 
       result.Add(newEvent);
     }
@@ -114,7 +121,29 @@ public class ToDboTransformer
     return result;
   }
 
-  public BossStage CreateFirstStage(Boss boss)
+  public static List<BossStage> ToBossStages(Boss boss, IEnumerable<PartialBossStage> partialBossStage)
+  {
+    var count = 0;
+    var stages = new List<BossStage> { CreateFirstStage(boss) };
+    foreach (var stage in partialBossStage)
+    {
+      stages.Add(new BossStage()
+      {
+        Id = Guid.NewGuid().ToString(),
+        BossId = boss.Id,
+        StageNumber = count++,
+        StageName = stage.Name,
+        EventType = stage.EventType,
+        EventTypeForNote = stage.EventType.GetEventTypeForNote(),
+        AbilityId = stage.AbilityId,
+        EventCount = stage.Count,
+        StartTimer = 0,
+        EndTimer = 0
+      });
+    }
+    return stages;
+  }
+  public static BossStage CreateFirstStage(Boss boss)
   {
     var newStage = new BossStage()
     {

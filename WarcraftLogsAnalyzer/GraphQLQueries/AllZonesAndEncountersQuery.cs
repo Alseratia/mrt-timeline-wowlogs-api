@@ -1,6 +1,6 @@
-namespace WarcraftLogs.Query;
+namespace WarcraftLogsAnalyzer.Query;
 
-public class AllZonesAndEncountersQuery : AbstractQuery<List<WLZone>>
+public class AllZonesAndEncountersQuery : BaseQuery<List<WLZone>>
 {
   public AllZonesAndEncountersQuery()
   {

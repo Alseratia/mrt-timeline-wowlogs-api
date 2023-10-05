@@ -1,9 +1,16 @@
-namespace WarcraftLogs.Query;
+namespace WarcraftLogsAnalyzer.Query;
 
-public class ReportQuery : AbstractQuery<WLReportData>
+public class ReportQuery : BaseQuery<WLReportData>
 {
-  public ReportQuery(string code, int fightId)
+  public ReportQuery(string code, uint fightId, 
+                     FilterExpression? bossFilterExpression = null,
+                     FilterExpression? playersFilterExpression = null)
   {
+    bossFilterExpression?.AndWhere(x => (x.Type == EventType.cast || x.Type == EventType.begincast ||
+                           x.Type == EventType.applybuff || x.Type == EventType.removebuff) && x.SourceType == SourceType.Npc);
+    if (bossFilterExpression == null) 
+      bossFilterExpression = FilterExpression.Where(x => (x.Type == EventType.cast || x.Type == EventType.begincast ||
+                           x.Type == EventType.applybuff || x.Type == EventType.removebuff) && x.SourceType == SourceType.Npc);
     Query = $@"
           query {{
             reportData {{
@@ -16,26 +23,20 @@ public class ReportQuery : AbstractQuery<WLReportData>
                   difficulty
                 }}
                 playerDetails(fightIDs: {fightId})
-                bossCasts:
+                bossEvents:
                 events(
-                  fightIDs: {fightId}
-                  hostilityType: Enemies 
-                  dataType: Casts
+                  fightIDs: {fightId},
+                  hostilityType: Enemies,
                   limit: 1000000000
-                ) {{ data }}
-                bossBuffs:
-                events(
-                  fightIDs: {fightId}
-                  hostilityType: Enemies 
-                  dataType: Buffs
-                  limit: 1000000000
+                  {$",filterExpression: \"{bossFilterExpression}\""}
                 ) {{ data }}
                 playersCasts:
                 events(
-                  fightIDs: {fightId}
-                  hostilityType: Friendlies 
+                  fightIDs: {fightId},
+                  hostilityType: Friendlies,
                   dataType: Casts
                   limit: 1000000000
+                  {(playersFilterExpression == null ? "" : $",filterExpression: \"{playersFilterExpression}\"")}
                 ) {{ data }}
               }}
             }}

@@ -1,4 +1,4 @@
-﻿﻿namespace Timeline;
+﻿namespace Timeline;
 
 public class Program
 {
@@ -10,11 +10,12 @@ public class Program
 
   public static IHostBuilder CreateHostBuilder(string[] args) =>
     Host.CreateDefaultBuilder(args)
+        
         .ConfigureLogging(builder => builder.AddConsole(options =>
             options.FormatterName = nameof(YandexLoggerFormatter)))
         .ConfigureWebHostDefaults(webBuilder =>
         {
-            webBuilder.UseStartup<Startup>();
+          webBuilder.UseStartup<Startup>();
         });
   
 }

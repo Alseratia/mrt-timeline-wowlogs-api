@@ -1,12 +1,13 @@
+using Timeline;
 using TimelineDatabaseContext;
-using WarcraftLogs;
+using WarcraftLogsAnalyzer;
 
-namespace Timeline;
+namespace TimelineCache;
 
 public class ToDtoTransformer
 {
-  private readonly CacheService _cacheService;
-  public ToDtoTransformer(CacheService cacheService)
+  private readonly ICacheService _cacheService;
+  public ToDtoTransformer(ICacheService cacheService)
   {
     _cacheService = cacheService;
   }
@@ -24,11 +25,11 @@ public class ToDtoTransformer
 
   public TimelineEvent ToTimelineEvent(WLEvent event_, BossStage? stage)
   {
-    var absoluteTimer = event_.Timestamp.Seconds;
+    var absoluteTimer = (int)event_.Timestamp.TotalSeconds;
     return new TimelineEvent()
     {
       AbsoluteTimer = absoluteTimer,
-      RelativeTimer = (stage == null || stage.AbilityId == null) ? 0 : absoluteTimer - stage.StartTimer,
+      RelativeTimer = (stage == null || stage.AbilityId == null) ? absoluteTimer : absoluteTimer - stage.StartTimer,
       SpellId = event_.AbilityGameId.ToString(),
       Options = ToTimerOptions(stage)
     };
@@ -98,8 +99,9 @@ public class ToDtoTransformer
     // supported abilities in db
     var supportedSpecsAbilities = (_cacheService.GetAbilities() ?? new List<Ability>()).GroupBy(x => x.WowSpecId);
     var bossStages = boss.Stages.OrderBy(x => x.StartTimer).ToList();
+    
     // group events by player
-    var eventsGroups = playersCasts.GroupBy(x => x.SourceID);
+    var eventsGroups = playersCasts.Where(x => x.Type == WLEventType.cast).GroupBy(x => x.SourceID);
 
     foreach (var playerCasts in eventsGroups)
     {
@@ -113,7 +115,7 @@ public class ToDtoTransformer
       {
         if (supportedPlayerAbilities.Any(x => x.Id == playerCast.AbilityGameId.ToString()))
         {
-          var currentStage = bossStages.FirstOrDefault(x => x.EndTimer > playerCast.Timestamp.Seconds);
+          var currentStage = bossStages.LastOrDefault(x => x.StartTimer <= playerCast.Timestamp.TotalSeconds);
           player.Events.Add(ToTimelineEvent(playerCast, currentStage));
         }
       }

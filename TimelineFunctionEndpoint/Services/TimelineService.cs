@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
-
-using WarcraftLogs;
+using TimelineCache;
 using TimelineDatabaseContext;
+using WarcraftLogsAnalyzer;
 
 namespace Timeline;
 
@@ -11,25 +11,36 @@ namespace Timeline;
 public class TimelineService
 {
   private readonly WarcraftlogsAnalyzer _logAnalyzer;
-  private readonly CacheService _cacheService;
+  private readonly ICacheService _cacheService;
   private readonly ToDtoTransformer _toTimelineTransformer;
+  private readonly ILogger<TimelineService> _logger;
   public TimelineService(WarcraftlogsAnalyzer logAnalyzer,
-                         CacheService cacheService,
-                         ToDtoTransformer toTimelineTransformer)
+                         ICacheService cacheService,
+                         ToDtoTransformer toTimelineTransformer,
+                         ILogger<TimelineService> logger)
   {
     _logAnalyzer = logAnalyzer;
     _cacheService = cacheService;
     _toTimelineTransformer = toTimelineTransformer;
+    _logger = logger;
+  }
+  public async Task<ActionResult> GetTimelineStoreLast(string code)
+  {
+    var fightId = await _logAnalyzer.GetLastFightId(code);
+    if (fightId == null) return new NotFoundResult();
+
+    return await GetTimelineStore(code, (uint)fightId);
   }
 
-  public async Task<ActionResult> GetTimelineStore(string code, int fightId)
+  public async Task<ActionResult> GetTimelineStore(string code, uint fightId)
   {
-    var reportData = await _logAnalyzer.GetReportData(code, fightId, true);
+    var reportData = await _logAnalyzer.GetReportData(code, fightId);
     if (reportData == null) return new NotFoundResult();
     var fight = reportData.Fight;
 
-    var boss = _cacheService.GetBossWithIncludes(fight.EncounterID, (Difficulty)fight.Difficulty);   // TODO handle a conversion error of complexities that are not supported
-    if (boss == null) throw new Exception("This boss not exist");
+    if (fight.Difficulty == null || !Enum.TryParse(fight.Difficulty.ToString(), out Difficulty difficulty)) return new NotFoundResult();
+    var boss = _cacheService.GetBossWithIncludes(fight.EncounterID, difficulty);
+    if (boss == null) return new NotFoundResult();
 
     boss.FightDuration = fight.GetFightDuration();
     UpdateBossStages(boss, reportData.BossEvents);
@@ -38,49 +49,56 @@ public class TimelineService
     {
       TimelineStoreState = _toTimelineTransformer.ToTimelineStoreState(boss, reportData),
       Boss = boss
-    });
+    });;
 
     return result;
   }
 
   private static void UpdateBossStages(Boss boss, List<WLEvent> wlEvents)
   {
-    var stages = boss.Stages.OrderByDescending(x => x.StageNumber).ToList();
-    var events = boss.Events.OrderBy(x => x.AbsoluteTimer).ToList();
+    var stages = boss.Stages.OrderBy(x => x.StageNumber).ToList();
 
-    int prev_startTimer = boss.FightDuration;
+
     foreach (var stage in stages)
     {
-      stage.EndTimer = prev_startTimer;
-      if (stage.IsFirstStage()) continue;
-
       var activationEvent = wlEvents.Where(a => (EventType)a.Type == stage.EventType && 
                                                 a.AbilityGameId == stage.AbilityId && 
                                                 stage.EventCount == a.CastNumber)
                                     .FirstOrDefault();
 
-      if (activationEvent == null)
-      {
-        stage.StartTimer = prev_startTimer;
-        continue;
-      }
+      if (activationEvent == null) continue;
+      if ((int)activationEvent.Timestamp.TotalSeconds == stage.StartTimer) continue;
 
-      prev_startTimer = (int)activationEvent.Timestamp.TotalSeconds;
-      MoveEventsTimer(boss, stage, prev_startTimer);
-      stage.StartTimer = prev_startTimer;
+      MoveEventsTimer(boss, stage, (int)activationEvent.Timestamp.TotalSeconds);
     }
 
+    var prevStartTimer = boss.FightDuration;
+    stages.OrderByDescending(x => x.StageNumber).ToList().ForEach(x =>
+    {
+      x.EndTimer = prevStartTimer;
+      prevStartTimer = x.StartTimer;
+    });
   }
   private static void MoveEventsTimer(Boss boss, BossStage curStage, int newStartTimer)
   {
     var diffTime = newStartTimer - curStage.StartTimer;
-    foreach (var stage in boss.Stages)
+    var greaterThenStages = boss.Stages.Where(x => x.StageNumber >= curStage.StageNumber).ToList();
+
+    foreach (var ability in boss.Abilities)
     {
-      if (stage == curStage || stage.StartTimer < curStage.StartTimer) continue;
-      foreach (var event_ in stage.BossEvents)
+      if (ability.Event == null) continue;
+      foreach (var abilityEvent in ability.Event)
       {
-        if (event_.RelativeTimer != null) event_.AbsoluteTimer += diffTime;
+        if (abilityEvent.RelativeTimer != null && greaterThenStages.Any(x => x.Id == abilityEvent.StageId))
+        {
+          abilityEvent.AbsoluteTimer += diffTime;
+        }
       }
     }
+    greaterThenStages.ForEach(x =>
+    {
+      x.StartTimer += diffTime;
+      x.EndTimer += diffTime;
+    });
   }
 }

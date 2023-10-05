@@ -1,4 +1,4 @@
-namespace WarcraftLogs;
+namespace WarcraftLogsAnalyzer;
 
 public class WLResponse
 {
@@ -29,12 +29,11 @@ public class WLResponse
         public PlayerDetailsClass? PlayerDetails { get; set; }
         public List<WLFight>? Fights { get; set; }
         public PlayersCastsClass? PlayersCasts { get; set; }
-        public BossCastsClass? BossCasts { get; set; }
-        public BossBuffsClass? BossBuffs { get; set; }
-        public List<WLEvent>? BossEvents { get; set; }
+        public BossEventsClass? BossEvents { get; set; }
 
         public class PlayerDetailsClass
         {
+          
           public PlayerDetailsData? Data { get; set; }
           public class PlayerDetailsData
           {
@@ -46,11 +45,7 @@ public class WLResponse
         {
           public List<WLEvent>? Data { get; set; }
         }
-        public class BossCastsClass
-        {
-          public List<WLEvent>? Data { get; set; }
-        }
-        public class BossBuffsClass
+        public class BossEventsClass
         {
           public List<WLEvent>? Data { get; set; }
         }

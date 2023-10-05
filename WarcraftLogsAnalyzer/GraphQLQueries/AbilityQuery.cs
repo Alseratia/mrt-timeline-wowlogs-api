@@ -1,6 +1,6 @@
-namespace WarcraftLogs.Query;
+namespace WarcraftLogsAnalyzer.Query;
 
-public class AbilityQuery : AbstractQuery<WLAbility>
+public class AbilityQuery : BaseQuery<WLAbility>
 {
   public AbilityQuery(int id)
   {

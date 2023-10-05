@@ -1,6 +1,6 @@
 using Amazon.Lambda.AspNetCoreServer;
-
 using Timeline;
+using YandexFunction;
 
 namespace WebApplication
 {
@@ -8,6 +8,8 @@ namespace WebApplication
   {
     protected override void Init(IWebHostBuilder builder)
     {
+      builder.ConfigureLogging(builder => builder.AddConsole(options =>
+            options.FormatterName = nameof(YandexLoggerFormatter)));
       builder.UseStartup<Startup>();
     }
   }

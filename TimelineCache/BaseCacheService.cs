@@ -1,28 +1,24 @@
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Memory;
-
+﻿using Microsoft.EntityFrameworkCore;
 using TimelineDatabaseContext;
 
-namespace Timeline;
+namespace TimelineCache;
 
-public class CacheService
+public abstract class BaseCacheService : ICacheService
 {
-  private readonly IMemoryCache _memoryCache;
-  private readonly IDbContextFactory<DatabaseContext> _dbFactory;
-  private readonly object _cacheLock = new();
-  public CacheService(IMemoryCache memoryCache, IDbContextFactory<DatabaseContext> dbFactory)
+  protected readonly IDbContextFactory<DatabaseContext> _dbFactory;
+
+  public BaseCacheService(IDbContextFactory<DatabaseContext> dbFactory)
   {
-    _memoryCache = memoryCache;
     _dbFactory = dbFactory;
   }
 
   public Boss? GetBossWithIncludes(int bossId, Difficulty difficulty)
   {
     string key = $"AllBoss_{bossId}_{difficulty}";
-
+ 
     return GetFromCacheOrDb(key, (_db) => _db.Boss.AsNoTracking()
                                                .Include(x => x.Abilities)
-                                               .Include(x => x.Events)
+                                               .ThenInclude(x => x.Event)
                                                .Include(x => x.Stages)
                                                .FirstOrDefault(x => x.InGameId == bossId && x.Difficulty == difficulty));
   }
@@ -61,22 +57,13 @@ public class CacheService
   {
     var key = $"PlayersAbilities";
     return GetFromCacheOrDb(key, (_db) => _db.Ability.ToList());
-
   }
-  private T? GetFromCacheOrDb<T>(string key, Func<DatabaseContext, T?> getDataFromDb)
+
+  public List<BossStage>? GetBossesStages()
   {
-    lock (_cacheLock)
-    {
-      _memoryCache.TryGetValue(key, out T? data);
-
-      if (data == null)
-      {
-        using var db = _dbFactory.CreateDbContext();
-        data = getDataFromDb(db);
-        if (data != null) _memoryCache.Set(key, data);
-      }
-      return data;
-    }
+    var key = $"BossesStages";
+    return GetFromCacheOrDb(key, (_db) => _db.BossStage.ToList());
   }
-}
 
+  protected abstract T? GetFromCacheOrDb<T>(string key, Func<DatabaseContext, T?> getDataFromDb) where T : class;
+}
