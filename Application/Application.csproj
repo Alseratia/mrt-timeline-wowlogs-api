@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net6.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\CacheService\CacheService.csproj" />
+      <ProjectReference Include="..\DataAccess\DataAccess.csproj" />
+      <ProjectReference Include="..\Shared\Shared.csproj" />
+      <ProjectReference Include="..\WarcraftLogsService\WarcraftLogsService.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Json.More.Net" Version="2.0.1" />
+      <PackageReference Include="Mapster" Version="7.4.0" />
+      <PackageReference Include="Mapster.DependencyInjection" Version="1.0.1" />
+      <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.1" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Models\" />
+    </ItemGroup>
+
+
+    <Target Name="Mapster">
+        <Exec WorkingDirectory="$(ProjectDir)" Command="dotnet build" />
+        <Exec WorkingDirectory="$(ProjectDir)" Command="dotnet tool restore" />
+        <Exec WorkingDirectory="$(ProjectDir)" Command="dotnet mapster model -a &quot;$(TargetDir)$(ProjectName).dll&quot;" />
+        <Exec WorkingDirectory="$(ProjectDir)" Command="dotnet mapster extension -a &quot;$(TargetDir)$(ProjectName).dll&quot;" />
+        <Exec WorkingDirectory="$(ProjectDir)" Command="dotnet mapster mapper -a &quot;$(TargetDir)$(ProjectName).dll&quot;" />
+    </Target>
+    
+</Project>

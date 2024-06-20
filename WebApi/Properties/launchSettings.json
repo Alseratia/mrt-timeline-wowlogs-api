@@ -1,0 +1,18 @@
+﻿{
+  "profiles": {
+    "Development": {
+      "commandName": "Project",
+      "applicationUrl": "https://localhost:7003",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    },
+    "Debug": {
+      "commandName": "Project",
+      "applicationUrl": "https://localhost:7003",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    }
+  }
+}
